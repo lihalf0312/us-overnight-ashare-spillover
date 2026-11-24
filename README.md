@@ -97,3 +97,105 @@
 - 结果窗口截至 2026-03-31；美股信号依赖美股日频与分钟数据，A股侧用日线与开盘分钟数据。
 - 全部为历史回测（含成本模型），无实盘记录；手续费与价差是硬数字，冲击成本是模型估计。
 - 期货主力合约按当日成交量最大判定；合约换月造成的价差跳变已用"相对自身周期正常水平"的方式剔除。
+
+---
+
+# English Version
+
+> Figure labels are in Chinese; the text below explains each chart.
+
+Two quant strategies from the same research line, both trading Chinese A-share index futures and cash equities, with holding periods from intraday to one day.
+**Strategy B is Strategy A's fourth leg taken out on its own**, so the two share one research pipeline — they are not two independent return sources.
+
+| | Strategy A: four-leg book | Strategy B: IM−IC basis-spread single leg |
+|---|---|---|
+| Composition | Four low-correlated legs, equal weight | One leg only (same as A's fourth) |
+| Data needed | US + A-shares | A-shares only |
+| Profile | Diversified, shallow drawdowns | Higher but concentrated returns, deep drawdowns |
+| Intended role | Satellite portfolio | Crisis-alpha complement |
+
+## 1. The Economics
+
+A big US overnight sell-off carries into China: A-shares usually gap down at the open, and often overshoot. The overshoot is repaired within the same day or the next. This "overreaction — repair" cycle is the entire source of returns, exploited along two paths:
+
+- **Repair on the single side (Strategy A's legs 1–3)**: on the worst panic days, catch the open — buy a small-cap basket and sell the next day, or buy CSI 500 futures and hold to the close, or fade a large opening gap within 15 minutes.
+- **Repair on the relative price (leg 4 / Strategy B)**: on panic nights institutional hedging concentrates in CSI 1000, widening its discount against CSI 500 far beyond normal. The spread then converges back. Go long the more heavily hit side, short the other, close the next day — index direction is hedged out, only the convergence is captured.
+
+An important fact: the anomaly is strong on index levels, but on futures prices most of it is already priced in — which is why the realized Sharpe is in the 1–2 range, not the paper 3+.
+
+Evidence for the spread leg, below: the x-axis is the size of the overnight spread move, the y-axis is gross P&L per trade (before costs). Bigger overnight moves mean bigger intraday repair; the dashed lines are real cost levels under different execution styles — gross P&L must sit above the cost line to make money.
+
+![Spread leg: signal strength vs gross P&L per trade](figs/basis_spread_edge.png)
+
+## 2. Rules
+
+All backtests are strictly walk-forward ("only the past predicts the future"): every month, parameters are re-estimated from all data available at that point and applied to that month. No look-ahead tuning. In-sample 2016-06 to 2019, out-of-sample 2020-01 to 2025-12, latest segment 2026Q1.
+
+**Strategy A's four legs:**
+
+| Leg | When it trades | What it does |
+|---|---|---|
+| 1. Small-cap event leg | The morning after the US drops more than 2% overnight | Buy a small-cap basket at the open, sell at the next day's open; if a name is locked at the down-limit, roll forward |
+| 2. Futures intraday leg | Days with a big US overnight drop plus panic conditions (very high vol or deep futures discount) | Buy CSI 500 futures at 09:30, sell at the close — capture the same-day repair |
+| 3. Gap-fade leg | Days with elevated A-share volatility and a large opening gap | Enter against the gap at 09:30, exit at 09:45 — capture the fade of the opening overreaction |
+| 4. Spread leg | When the CSI1000−CSI500 discount gap deviates far enough from its own normal level | Open long/short spread at 09:30, close at the next day's close; position scales with signal strength (capped at 2×) |
+
+Each leg only fires when the expected return covers the trading cost; leg 4 sizes continuously with the signal, the others are all-or-nothing.
+
+**Costs follow real rules**: exchange fees (different rates for same-day vs next-day exits, with the 2023 fee cut applied by era) + one full tick of spread + market-depth-linked impact cost (bigger orders, worse fills).
+
+## 3. Performance (all costs included, ¥5M per leg)
+
+| Window | Strategy A (four-leg book) | Strategy B (spread single leg) |
+|---|---|---|
+| In-sample 2016-06 to 2019 | 0.42% / Sharpe 0.69 / max DD −0.32% | — (instrument not listed until mid-2022) |
+| Out-of-sample 2020-01 to 2025-12 | 5.07% / 1.37 / −3.01% | 10.44% / 1.00 / −11.62% (all signals after 2024; flat before) |
+| 2024-01 to 2026-03 (B's full tradable period, 337 trades) | 10.75% / 2.14 / −3.01% | 34.12% / 1.91 / −11.62% |
+| 2026Q1 | 20.41% / 3.70 / −1.93% | 58.41% / 3.49 / −7.37% |
+
+(annualized return / Sharpe ratio / maximum drawdown)
+
+**By year (Strategy A, ¥5M)**: 2020 +7.2%, 2021 +1.4%, 2022 +2.8%, 2023 −0.2%, 2024 +3.5%, 2025 +16.7%, 2026Q1 +4.8%.
+
+**Return structure**: both strategies earn from crisis clusters — near-zero in calm months, concentrated gains in the days after crashes. About 70% of Strategy B's cumulative profit came in 2025; in mid-2024 it drew down −11.6% and stayed underwater for roughly 9 months.
+
+NAV and drawdown comparison of the two strategies (solid line ¥5M, dashed line ¥20M per leg; the grey dotted line on the right panel is the "extreme-assumption" book drawdown reference of −3.8% discussed later):
+
+![NAV and drawdown of both strategies](figs/combined_nav_dd.png)
+
+## 4. Robustness and Evidence Grade
+
+| Test | Strategy A (OOS 2020-2025) | Strategy B (2024-01 to 2026-03) |
+|---|---|---|
+| Bootstrap 95% CI (Sharpe) | [0.63, 2.04] | [0.52, 3.23] |
+| Sharpe after dropping any single year | 1.09–1.69 | 1.03–3.10 (weakest without 2025, still >1) |
+| After trimming the top/bottom 5% of trades | — | still +17.3bp per trade (t 3.97 — not a few lucky wins) |
+| After doubling impact cost | — | Sharpe 1.16–1.26, still positive |
+
+**Do the legs fail together in crises?** Marking crisis days (large US/A-share moves, about 23% of the out-of-sample), the highest correlation between any two legs is 0.19, and days when multiple legs are open simultaneously are profitable on average (+23.7bp/day) — diversification does not break down in crises. But under a deliberately conservative assumption (each leg's worst consecutive 5 days inside every crisis window happen on the same days), the book's max drawdown deepens from −3.0% to **−3.8%**. We quote −3.8% as the risk number.
+
+![Crisis-day stress test](figs/crisis_cofire.png)
+
+## 5. Capacity
+
+| Notional per leg | Leg 1 (cash basket) round-trip cost | Legs 2/3 (futures) round-trip cost | Leg 4 (spread) round-trip cost |
+|---|---|---|---|
+| ¥1M | 19.9bp | 5.3bp | 4.6bp |
+| ¥5M | 20.4bp | 7.5bp | 8.4bp |
+| ¥20M | 21.4bp | 11.4bp | 15.2bp |
+| ¥100M | 23.9bp | 21.2bp | 32.0bp |
+
+- Practical ceiling is about **¥20M per leg**: at that size the spread leg's out-of-sample Sharpe drops from 1.9 to roughly 1.2; at ¥100M its round-trip cost (32bp) exceeds the average gross P&L per trade (about 28bp), so the edge is essentially gone.
+- We tested slicing large orders across 09:30–10:00 to save impact cost — **it loses money**: the first half of the spread convergence happens inside the opening 30 minutes, and the missed move far outweighs the impact saved.
+- Strategy A at ¥20M per leg: out-of-sample 3.49% / Sharpe 1.14 / DD −3.32%; 2026Q1 8.33% / 1.83 / −1.81%.
+- Positioning: a satellite strategy with capacity in the tens of millions of RMB, not a core holding for large capital.
+
+Round-trip cost vs order size, by leg:
+
+![Round-trip cost vs notional](figs/exec_capacity.png)
+
+## 6. Data and Methodology
+
+- All results end at 2026-03-31. US signals use US daily and intraday data; the A-share side uses daily bars and opening-minute data.
+- Everything is historical simulation with a cost model — no live track record. Fees and spreads are hard numbers; impact cost is a model estimate.
+- The dominant futures contract is chosen by daily volume; roll-induced spread jumps are removed by expressing each contract relative to its own roll-cycle normal level.
