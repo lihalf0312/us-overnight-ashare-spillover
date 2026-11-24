@@ -102,8 +102,6 @@
 
 # English Version
 
-> Figure labels are in Chinese; the text below explains each chart.
-
 Two quant strategies from the same research line, both trading Chinese A-share index futures and cash equities, with holding periods from intraday to one day.
 **Strategy B is Strategy A's fourth leg taken out on its own**, so the two share one research pipeline — they are not two independent return sources.
 
@@ -125,7 +123,7 @@ An important fact: the anomaly is strong on index levels, but on futures prices 
 
 Evidence for the spread leg, below: the x-axis is the size of the overnight spread move, the y-axis is gross P&L per trade (before costs). Bigger overnight moves mean bigger intraday repair; the dashed lines are real cost levels under different execution styles — gross P&L must sit above the cost line to make money.
 
-![Spread leg: signal strength vs gross P&L per trade](figs/basis_spread_edge.png)
+![Spread leg: signal strength vs gross P&L per trade](figs/en/basis_spread_edge.png)
 
 ## 2. Rules
 
@@ -161,7 +159,7 @@ Each leg only fires when the expected return covers the trading cost; leg 4 size
 
 NAV and drawdown comparison of the two strategies (solid line ¥5M, dashed line ¥20M per leg; the grey dotted line on the right panel is the "extreme-assumption" book drawdown reference of −3.8% discussed later):
 
-![NAV and drawdown of both strategies](figs/combined_nav_dd.png)
+![NAV and drawdown of both strategies](figs/en/combined_nav_dd.png)
 
 ## 4. Robustness and Evidence Grade
 
@@ -174,7 +172,7 @@ NAV and drawdown comparison of the two strategies (solid line ¥5M, dashed line 
 
 **Do the legs fail together in crises?** Marking crisis days (large US/A-share moves, about 23% of the out-of-sample), the highest correlation between any two legs is 0.19, and days when multiple legs are open simultaneously are profitable on average (+23.7bp/day) — diversification does not break down in crises. But under a deliberately conservative assumption (each leg's worst consecutive 5 days inside every crisis window happen on the same days), the book's max drawdown deepens from −3.0% to **−3.8%**. We quote −3.8% as the risk number.
 
-![Crisis-day stress test](figs/crisis_cofire.png)
+![Crisis-day stress test](figs/en/crisis_cofire.png)
 
 ## 5. Capacity
 
@@ -192,7 +190,7 @@ NAV and drawdown comparison of the two strategies (solid line ¥5M, dashed line 
 
 Round-trip cost vs order size, by leg:
 
-![Round-trip cost vs notional](figs/exec_capacity.png)
+![Round-trip cost vs notional](figs/en/exec_capacity.png)
 
 ## 6. Data and Methodology
 
